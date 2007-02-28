@@ -34,7 +34,7 @@ END
 } else {
 	ok(0, "set up test data");
 }
-my $config = Config::JSON->new("/tmp/test.conf");
+$config = Config::JSON->new("/tmp/test.conf");
 ok( defined $config, "load config" );
 
 ok( $config->get("dsn") ne "", "get()" );
@@ -52,7 +52,7 @@ ok($found, "addToArray()");
 
 
 $config->deleteFromArray("colors","TEST");
-my $found = 0;
+$found = 0;
 foreach my $color ( @{$config->get("colors")}) {
 	$found = 1 if ($color eq "TEST");
 }
@@ -60,7 +60,7 @@ ok(!$found, "deleteFromArray()");
 
 
 $config->addToHash("stats","TEST","VALUE");
-my $found = 0;
+$found = 0;
 foreach my $stat (keys %{$config->get("stats")}) {
 	$found = 1 if ($stat eq "TEST" && $config->get("stats")->{$stat} eq "VALUE");
 }
@@ -68,7 +68,7 @@ ok($found, "addToHash()");
 
 
 $config->deleteFromHash("stats","TEST");
-my $found = 0;
+$found = 0;
 foreach my $stat (keys %{$config->get("stats")}) {
 	$found = 1 if ($stat eq "TEST");
 }

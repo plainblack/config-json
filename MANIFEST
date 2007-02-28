@@ -1,10 +1,11 @@
 Changes
 MANIFEST
-META.yml # Will be created by "make dist"
+META.yml
 Makefile.PL
 README
 lib/Config/JSON.pm
 t/00.load.t
+t/Config.t
 t/perlcritic.t
 t/pod-coverage.t
 t/pod.t

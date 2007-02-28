@@ -6,7 +6,7 @@ use Carp;
 use JSON;
 use List::Util;
 
-use version; my $VERSION = qv('1.0.0');
+use version; my $VERSION = qv('1.01');
 
 #-------------------------------------------------------------------
 sub addToArray {
