@@ -1,4 +1,4 @@
-Config-JSON version 1.0.1
+Config-JSON version 1.0.2
 
 A JSON based config file parser/writer.
 
@@ -17,6 +17,12 @@ DEPENDENCIES
 
 JSON
 List::Util
+Test::More
+version
+Test::Deep
+Test::Perl::Critic
+Test::Pod::Coverage
+Test::Pod
 
 
 COPYRIGHT AND LICENCE

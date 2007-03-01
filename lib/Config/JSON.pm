@@ -6,7 +6,7 @@ use Carp;
 use JSON;
 use List::Util;
 
-use version; our $VERSION = qv('1.0.1');
+use version; our $VERSION = qv('1.0.2');
 
 #-------------------------------------------------------------------
 sub addToArray {
@@ -375,6 +375,18 @@ Config::JSON requires no configuration files or environment variables.
 
 =item List::Util
 
+=item Test::More
+
+=item version
+
+=item Test::Deep
+
+=item Test::Perl::Critic
+
+=item Test::Pod::Coverage
+
+=item Test::Pod
+
 =back
 
 
@@ -394,7 +406,7 @@ L<http://rt.cpan.org>.
 
 =head1 AUTHOR
 
-JT Smith  C<< <jt@plainblack.com> >>
+JT Smith  C<< <jt-at-plainblack-dot-com> >>
 
 
 =head1 LICENCE AND COPYRIGHT
