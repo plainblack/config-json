@@ -1,5 +1,9 @@
 Revision history for Config-JSON
 
+1.0.3   Thu Mar 05 09:29:00 2007
+	Sorting out more CPAN issues. No code changes. (Sorry, this is the first module I've released to CPAN, and there seems to be more that happens after upload
+	than I know how to test from the command line.)
+
 1.0.2   Thu Mar 01 11:33:00 2007
 	Sorting out more CPAN issues. No code changes.
 

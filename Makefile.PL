@@ -13,7 +13,7 @@ WriteMakefile(
 	'JSON'	     		=> 0,
         'Test::More' 		=> 0,
         'version'    		=> 0,
-	'Test::Deep:'		=> 0,
+	'Test::Deep'		=> 0,
         'Test::Perl::Critic'	=> 0,
         'Test::Pod::Coverage'	=> 0,
     	'Test::Pod'		=> 0, 
