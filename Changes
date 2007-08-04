@@ -1,6 +1,7 @@
 Revision history for Config-JSON
 
-1.0.4   Sat Aug 04 08:15:00 2007
+1.1.0   Sat Aug 04 08:15:00 2007
+    Added direct access multi-level directive support.
     Fixed qv/qw version number problem.
 
 1.0.3   Thu Mar 05 09:29:00 2007

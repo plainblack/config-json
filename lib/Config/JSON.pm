@@ -6,7 +6,7 @@ use Carp;
 use JSON;
 use List::Util;
 
-use version; our $VERSION = qv('1.0.4');
+use version; our $VERSION = qv('1.1.0');
 
 #-------------------------------------------------------------------
 sub addToArray {
@@ -28,9 +28,7 @@ sub addToHash {
         my $property = shift;
         my $key = shift;
         my $value = shift;
-        my $hash = $self->get($property);
-        $hash->{$key} = $value;
-        $self->set($property, $hash);
+        $self->set($property."/".$key, $value);
 }
 
 
@@ -41,7 +39,8 @@ sub create {
         if (open(my $FILE,">",$filename)) {
                 print $FILE "# config-file-type: JSON 1\n{ }\n";
                 close($FILE);
-        } else {
+        } 
+        else {
                 carp "Can't write to config file ".$filename;
         }
 	return $class->new($filename);	
@@ -53,11 +52,18 @@ sub create {
 sub delete {
         my $self = shift;
         my $param = shift;
-        delete $self->{_config}{$param};
+        my $directive   = $self->{_config};
+        my @parts       = split "/", $param;
+        my $lastPart    = pop @parts;
+        foreach my $part (@parts) {
+            $directive = $directive->{$part};
+        }
+        delete $directive->{$lastPart};
         if (open(my $FILE,">",$self->getFilename)) {
                 print $FILE "# config-file-type: JSON 1\n".objToJson($self->{_config}, {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1});
                 close($FILE);
-        } else {
+        } 
+        else {
                 carp "Can't write to config file ".$self->getFilename;
         }
 }
@@ -83,9 +89,7 @@ sub deleteFromHash {
         my $self = shift;
         my $property = shift;
         my $key = shift;
-        my $hash = $self->get($property);
-        delete $hash->{$key};
-        $self->set($property, $hash);
+        $self->delete($property."/".$key);
 }
 
 
@@ -98,9 +102,13 @@ sub DESTROY {
 
 #-------------------------------------------------------------------
 sub get {
-        my $self = shift;
-        my $param = shift;
-        return $self->{_config}{$param};
+        my $self        = shift;
+        my $property    = shift;
+        my $value       = $self->{_config};
+        foreach my $part (split "/", $property) {
+            $value = $value->{$part};
+        }
+        return $value;
 }
 
 
@@ -126,7 +134,8 @@ sub new {
                 my $self = {_pathToFile=>$pathToFile, _config=>$conf};
                 bless $self, $class;
                 return $self;
-        } else {
+        } 
+        else {
                 croak "Cannot read config file: ".$pathToFile;
         }
 }
@@ -134,14 +143,24 @@ sub new {
 
 #-------------------------------------------------------------------
 sub set {
-        my $self = shift;
-        my $param = shift;
-        my $value = shift;
-        $self->{_config}{$param} = $value;
+        my $self        = shift;
+        my $property    = shift;
+        my $value       = shift;
+        my $directive   = $self->{_config};
+        my @parts       = split "/", $property;
+        my $lastPart    = pop @parts;
+        foreach my $part (@parts) {
+            unless (exists $directive->{$part}) {
+                $directive->{$part} = {};
+            }
+            $directive = $directive->{$part};
+        }
+        $directive->{$lastPart} = $value;
         if (open(my $FILE, ">" ,$self->getFilename)) {
-                print $FILE "# config-file-type: JSON 1\n".objToJson($self->{_config}, {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1});
+                print {$FILE} "# config-file-type: JSON 1\n".objToJson($self->{_config}, {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1});
                 close($FILE);
-        } else {
+        } 
+        else {
                 carp "Can't write to config file ".$self->getFilename;
         }
 }
@@ -157,7 +176,7 @@ Config::JSON - A JSON based config file system.
 
 =head1 VERSION
 
-This document describes Config::JSON version 1.0.0
+This document describes Config::JSON version 1.1.0
 
 
 =head1 SYNOPSIS
@@ -167,11 +186,11 @@ This document describes Config::JSON version 1.0.0
  my $config = Config::JSON->create($pathToFile);
  my $config = Config::JSON->new($pathToFile);
 
- my $element = $config->get($param);
+ my $element = $config->get($directive);
 
- $config->set($param,$value);
+ $config->set($directive,$value);
 
- $config->delete($param);
+ $config->delete($directive);
  $config->deleteFromHash($name, $key);
  $config->deleteFromArray($name, $value);
 
@@ -199,8 +218,6 @@ This document describes Config::JSON version 1.0.0
         }
  } 
 
-Note that you can put comments in the config file as long as # is the first non-space character on the line. However, if you use this API to write to the config file, your comments will be eliminated.
-
 
 =head1 DESCRIPTION
 
@@ -212,14 +229,28 @@ If you want to see it in action, it is used as the config file system in WebGUI 
 
 Why build yet another config file system? Well there are a number of reasons: We used to use other config file parsers, but we kept running into limitations. We already use JSON in our app, so using JSON to store config files means using less memory because we already have the JSON parser in memory. In addition, with JSON we can have any number of hierarchcal data structures represented in the config file, whereas most config files will give you only one level of hierarchy, if any at all. JSON parses faster than XML and YAML. JSON is easier to read and edit than XML. Many other config file systems allow you to read a config file, but they don't provide any mechanism or utilities to write back to it. JSON is taint safe. JSON is easily parsed by languages other than Perl when we need to do that.
 
+=head2 Multi-level Directives
+
+You may of course access a directive called "foo", but since the config is basically a hash you can traverse
+multiple elements of the hash when specifying a directive name by simply delimiting each level with a slash, like
+"foo/bar". For example you may:
+
+ my $vitality = $config->get("stats/vitality");
+ $config->set("stats/vitality", 15);
+
+You may do this wherever you specify a directive name.
+
+=head2 Comments
+
+You can put comments in the config file as long as # is the first non-space character on the line. However, if you use this API to write to the config file, your comments will be eliminated.
 
 =head1 INTERFACE 
 
-=head2 addToArray ( property, value )
+=head2 addToArray ( directive, value )
 
-Adds a value to an array property in the config file.
+Adds a value to an array directive in the config file.
 
-=head3 property
+=head3 directive
 
 The name of the array.
 
@@ -228,11 +259,12 @@ The name of the array.
 The value to add.
 
 
-=head2 addToHash ( property, key, value )
+=head2 addToHash ( directive, key, value )
 
-Adds a value to a hash property in the config file.
+Adds a value to a hash directive in the config file. B<NOTE:> This is really the same as
+$config->set("directive/key", $value);
 
-=head3 property
+=head3 directive
 
 The name of the hash.
 
@@ -255,20 +287,20 @@ The path and filename of the file to create.
 
 
 
-=head2 delete ( param ) 
+=head2 delete ( directive ) 
 
 Deletes a key from the config file.
 
-=head3 param
+=head3 directive
 
-The name of the parameter to delete.
+The name of the directive to delete.
 
 
-=head2 deleteFromArray ( property, value )
+=head2 deleteFromArray ( directive, value )
 
-Deletes a value from an array property in the config file.
+Deletes a value from an array directive in the config file.
 
-=head3 property
+=head3 directive
 
 The name of the array.
 
@@ -278,11 +310,12 @@ The value to delete.
 
 
 
-=head2 deleteFromHash ( property, key )
+=head2 deleteFromHash ( directive, key )
 
-Delete a key from a hash property in the config file.
+Delete a key from a hash directive in the config file. B<NOTE:> This is really just the same as doing
+$config->delete("directive/key");
 
-=head3 property
+=head3 directive
 
 The name of the hash.
 
@@ -301,13 +334,13 @@ Deconstructor.
 
 
 
-=head2 get ( param ) 
+=head2 get ( directive ) 
 
-Returns the value of a particular parameter from the config file.
+Returns the value of a particular directive from the config file.
 
-=head3 param
+=head3 directive
 
-The name of the parameter to return.
+The name of the directive to return.
 
 
 
@@ -327,13 +360,13 @@ A string representing a path such as "/etc/my-cool-config.conf".
 
 
 
-=head2 set ( param, value ) 
+=head2 set ( directive, value ) 
 
-Creates a new or updates an existing parameter in the config file.
+Creates a new or updates an existing directive in the config file.
 
-=head3 param
+=head3 directive
 
-A parameter name.
+A directive name.
 
 =head3 value
 

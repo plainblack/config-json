@@ -1,4 +1,4 @@
-use Test::More tests => 12;
+use Test::More tests => 24;
 
 use lib '../lib';
 use Test::Deep;
@@ -24,6 +24,18 @@ my $testData = <<END;
         "stats" : {
                 "health" : 32,
                 "vitality" : 11
+        },
+
+        # multilevel
+        "this" : {
+            "that" : {
+                "scalar" : "foo",
+                "array" : ["foo", "bar"],
+                "hash" : { 
+                    "foo" : 1,
+                    "bar" : 2
+                }
+            }
         }
  } 
 
@@ -31,53 +43,66 @@ END
 	print {$file} $testData;
 	close($file);
 	ok(1, "set up test data");
-} else {
+} 
+else {
 	ok(0, "set up test data");
 }
 $config = Config::JSON->new("/tmp/test.conf");
-ok( defined $config, "load config" );
+isa_ok($config, "Config::JSON" );
 
+# getFilename
+is( $config->getFilename,"/tmp/test.conf","getFilename()" );
+
+# get
 ok( $config->get("dsn") ne "", "get()" );
 is( ref $config->get("stats"), "HASH", "get() hash" );
 is( ref $config->get("colors"), "ARRAY", "get() array" );
+is( $config->get("this/that/scalar"), "foo", "get() multilevel");
+is( ref $config->get("this/that/hash"), "HASH", "get() hash multilevel" );
+is( ref $config->get("this/that/array"), "ARRAY", "get() array multilevel" );
 
-is( $config->getFilename,"/tmp/test.conf","getFilename()" );
-
-$config->addToArray("colors","TEST");
-my $found = 0;
-foreach my $color ( @{$config->get("colors")}) {
-	$found = 1 if ($color eq "TEST");
-}
-ok($found, "addToArray()");
-
-
-$config->deleteFromArray("colors","TEST");
-$found = 0;
-foreach my $color ( @{$config->get("colors")}) {
-	$found = 1 if ($color eq "TEST");
-}
-ok(!$found, "deleteFromArray()");
-
-
-$config->addToHash("stats","TEST","VALUE");
-$found = 0;
-foreach my $stat (keys %{$config->get("stats")}) {
-	$found = 1 if ($stat eq "TEST" && $config->get("stats")->{$stat} eq "VALUE");
-}
-ok($found, "addToHash()");
-
-
-$config->deleteFromHash("stats","TEST");
-$found = 0;
-foreach my $stat (keys %{$config->get("stats")}) {
-	$found = 1 if ($stat eq "TEST");
-}
-ok(!$found, "deleteFromHash()");
-
-
+# set
 $config->set('privateArray', ['a', 'b', 'c']);
-cmp_bag($config->get('privateArray'), ['a', 'b', 'c'], 'set: array, not scalar');
+cmp_bag($config->get('privateArray'), ['a', 'b', 'c'], 'set()');
+$config->set('cars/ford', "mustang");
+is($config->get('cars/ford'), "mustang", 'set() multilevel non-exisistant');
+$config->set('cars/ford', [qw( mustang pinto maverick )]);
+cmp_bag($config->get('cars/ford'),[qw( mustang pinto maverick )], 'set() multilevel');
+
+# delete 
+$config->delete("dsn");
+ok(!(defined $config->get("dsn")), "delete()");
+$config->delete("stats/vitality");
+ok(!(defined $config->get("stats/vitality")), "delete() multilevel");
+ok(defined $config->get("stats"), "delete() multilevel - doesn't delete parent");
+
+# addToArray
+$config->addToArray("colors","TEST");
+ok((grep /TEST/, @{$config->get("colors")}), "addToArray()");
+$config->addToArray("cars/ford", "fairlane");
+ok((grep /fairlane/, @{$config->get("cars/ford")}), "addToArray() multilevel");
+
+# deleteFromArray
+$config->deleteFromArray("colors","TEST");
+ok(!(grep /TEST/, @{$config->get("colors")}), "deleteFromArray()");
+$config->deleteFromArray("cars/ford", "fairlane");
+ok(!(grep /fairlane/, @{$config->get("cars/ford")}), "deleteFromArray() multilevel");
+
+# addToHash
+$config->addToHash("stats","TEST","VALUE");
+is($config->get("stats/TEST"), "VALUE", "addToHash()");
+$config->addToHash("this/that/hash", "three", 3);
+is($config->get("this/that/hash/three"), 3, "addToHash() multilevel");
+
+# deleteFromHash
+$config->deleteFromHash("stats","TEST");
+my $hash = $config->get("stats");
+ok(!(exists $hash->{TEST}), "deleteFromHash()");
+$config->deleteFromHash("this/that/hash", "three");
+$hash = $config->get("this/that/hash");
+ok(!(exists $hash->{three}), "deleteFromHash() multilevel");
+
 
 END: {
-    $config->delete('privateArray');
+    unlink "/tmp/test.conf";
 }
