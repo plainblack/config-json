@@ -1,5 +1,8 @@
 Revision history for Config-JSON
 
+1.0.4   Sat Aug 04 08:15:00 2007
+    Fixed qv/qw version number problem.
+
 1.0.3   Thu Mar 05 09:29:00 2007
 	Sorting out more CPAN issues. No code changes. (Sorry, this is the first module I've released to CPAN, and there seems to be more that happens after upload
 	than I know how to test from the command line.)
@@ -11,5 +14,5 @@ Revision history for Config-JSON
 	Sorting out CPAN issues. No code changes.
 
 1.0.0  	Mon Feb 26 15:06:38 2007
-       	Initial public release. Has been used in production environments for more than a year.
+    Initial public release. Has been used in production environments for more than a year.
 
