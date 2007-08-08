@@ -5,30 +5,32 @@ use strict;
 use Carp;
 use JSON;
 use List::Util;
+use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
+use constant JSON_OPTIONS   => {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1};
 
 use version; our $VERSION = qv('1.1.0');
 
 #-------------------------------------------------------------------
 sub addToArray {
-        my $self = shift;
-        my $property = shift;
-        my $value = shift;
-        my $array = $self->get($property);
-        unless (defined List::Util::first { $value eq $_ } @{$array}) { # check if it already exists
+    my $self = shift;
+    my $property = shift;
+    my $value = shift;
+    my $array = $self->get($property);
+    unless (defined List::Util::first { $value eq $_ } @{$array}) { # check if it already exists
 		# add it
-        	push(@{$array}, $value);
-        	$self->set($property, $array);
+      	push(@{$array}, $value);
+      	$self->set($property, $array);
 	}
 }
 
 
 #-------------------------------------------------------------------
 sub addToHash {
-        my $self = shift;
-        my $property = shift;
-        my $key = shift;
-        my $value = shift;
-        $self->set($property."/".$key, $value);
+    my $self = shift;
+    my $property = shift;
+    my $key = shift;
+    my $value = shift;
+    $self->set($property."/".$key, $value);
 }
 
 
@@ -36,13 +38,13 @@ sub addToHash {
 sub create {
 	my $class = shift;
 	my $filename = shift;
-        if (open(my $FILE,">",$filename)) {
-                print $FILE "# config-file-type: JSON 1\n{ }\n";
-                close($FILE);
-        } 
-        else {
-                carp "Can't write to config file ".$filename;
-        }
+    if (open(my $FILE,">",$filename)) {
+        print $FILE FILE_HEADER."\n{ }\n";
+        close($FILE);
+    } 
+    else {
+        carp "Can't write to config file ".$filename;
+    }
 	return $class->new($filename);	
 }
 
@@ -50,119 +52,119 @@ sub create {
 
 #-------------------------------------------------------------------
 sub delete {
-        my $self = shift;
-        my $param = shift;
-        my $directive   = $self->{_config};
-        my @parts       = split "/", $param;
-        my $lastPart    = pop @parts;
-        foreach my $part (@parts) {
-            $directive = $directive->{$part};
-        }
-        delete $directive->{$lastPart};
-        if (open(my $FILE,">",$self->getFilename)) {
-                print $FILE "# config-file-type: JSON 1\n".objToJson($self->{_config}, {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1});
-                close($FILE);
-        } 
-        else {
-                carp "Can't write to config file ".$self->getFilename;
-        }
+    my $self = shift;
+    my $param = shift;
+    my $directive   = $self->{_config};
+    my @parts       = split "/", $param;
+    my $lastPart    = pop @parts;
+    foreach my $part (@parts) {
+        $directive = $directive->{$part};
+    }
+    delete $directive->{$lastPart};
+    if (open(my $FILE,">",$self->getFilename)) {
+        print $FILE FILE_HEADER."\n".objToJson($self->{_config}, JSON_OPTIONS);
+        close($FILE);
+    } 
+    else {
+        carp "Can't write to config file ".$self->getFilename;
+    }
 }
 
 #-------------------------------------------------------------------
 sub deleteFromArray {
-        my $self = shift;
-        my $property = shift;
-        my $value = shift;
-        my $array = $self->get($property);
-        for (my $i = 0; $i < scalar(@{$array}); $i++) {
-                if ($array->[$i] eq $value) {
-                        splice(@{$array}, $i, 1);
-                        last;
-                }
+    my $self = shift;
+    my $property = shift;
+    my $value = shift;
+    my $array = $self->get($property);
+    for (my $i = 0; $i < scalar(@{$array}); $i++) {
+        if ($array->[$i] eq $value) {
+            splice(@{$array}, $i, 1);
+            last;
         }
-        $self->set($property, $array);
+    }
+    $self->set($property, $array);
 }
 
 
 #-------------------------------------------------------------------
 sub deleteFromHash {
-        my $self = shift;
-        my $property = shift;
-        my $key = shift;
-        $self->delete($property."/".$key);
+    my $self = shift;
+    my $property = shift;
+    my $key = shift;
+    $self->delete($property."/".$key);
 }
 
 
 #-------------------------------------------------------------------
 sub DESTROY {
-        my $self = shift;
-        undef $self;
+    my $self = shift;
+    undef $self;
 }
 
 
 #-------------------------------------------------------------------
 sub get {
-        my $self        = shift;
-        my $property    = shift;
-        my $value       = $self->{_config};
-        foreach my $part (split "/", $property) {
-            $value = $value->{$part};
-        }
-        return $value;
+    my $self        = shift;
+    my $property    = shift;
+    my $value       = $self->{_config};
+    foreach my $part (split "/", $property) {
+        $value = $value->{$part};
+    }
+    return $value;
 }
 
 
 #-------------------------------------------------------------------
 sub getFilename {
-        my $self = shift;
-        return $self->{_pathToFile};
+    my $self = shift;
+    return $self->{_pathToFile};
 }
 
 
 #-------------------------------------------------------------------
 sub new {
-        my $class = shift;
-        my $pathToFile = shift;
-        my $json = "";
-        if (open(my $FILE, "<", $pathToFile)) {
-                while (my $line = <$FILE>) {
-                        $json .= $line unless ($line =~ /^\s*#/);
-                }
-                close($FILE);
-                my $conf = jsonToObj($json);
-                croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
-                my $self = {_pathToFile=>$pathToFile, _config=>$conf};
-                bless $self, $class;
-                return $self;
-        } 
-        else {
-                croak "Cannot read config file: ".$pathToFile;
+    my $class = shift;
+    my $pathToFile = shift;
+    my $json = "";
+    if (open(my $FILE, "<", $pathToFile)) {
+        while (my $line = <$FILE>) {
+            $json .= $line unless ($line =~ /^\s*#/);
         }
+        close($FILE);
+        my $conf = jsonToObj($json);
+        croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
+        my $self = {_pathToFile=>$pathToFile, _config=>$conf};
+        bless $self, $class;
+        return $self;
+    } 
+    else {
+        croak "Cannot read config file: ".$pathToFile;
+    }
 }
 
 
 #-------------------------------------------------------------------
 sub set {
-        my $self        = shift;
-        my $property    = shift;
-        my $value       = shift;
-        my $directive   = $self->{_config};
-        my @parts       = split "/", $property;
-        my $lastPart    = pop @parts;
-        foreach my $part (@parts) {
-            unless (exists $directive->{$part}) {
-                $directive->{$part} = {};
-            }
-            $directive = $directive->{$part};
+    my $self        = shift;
+    my $property    = shift;
+    my $value       = shift;
+    my $directive   = $self->{_config};
+    my @parts       = split "/", $property;
+    my $lastPart    = pop @parts;
+    foreach my $part (@parts) {
+        unless (exists $directive->{$part}) {
+            $directive->{$part} = {};
         }
-        $directive->{$lastPart} = $value;
-        if (open(my $FILE, ">" ,$self->getFilename)) {
-                print {$FILE} "# config-file-type: JSON 1\n".objToJson($self->{_config}, {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1});
-                close($FILE);
-        } 
-        else {
-                carp "Can't write to config file ".$self->getFilename;
-        }
+        $directive = $directive->{$part};
+    }
+    $directive->{$lastPart} = $value;
+    if (open(my $FILE, ">" ,$self->getFilename)) {
+        print {$FILE} FILE_HEADER."\n".objToJson($self->{_config}, JSON_OPTIONS);
+        close($FILE);
+    } 
+    else {
+        carp "Can't write to config file ".$self->getFilename;
+    }
 }
 
 
