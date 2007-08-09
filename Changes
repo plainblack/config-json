@@ -1,6 +1,6 @@
 Revision history for Config-JSON
 
-1.1.0   Wed Aug 08 19:15:00 2007
+1.1.0   Wed Aug 08 20:00:00 2007
     Added direct access multi-level directive support.
     Now is an Inside Out object per Perl Best Practices.
     API CHANGE: getFilename() does what you expect now, and getFilePath() returns the path and filename of the config.

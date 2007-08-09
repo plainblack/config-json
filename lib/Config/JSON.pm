@@ -6,11 +6,12 @@ use Carp;
 use Class::InsideOut qw(readonly id register private);
 use JSON;
 use List::Util;
+use version; our $VERSION = qv('1.1.0');
+
 
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
 use constant JSON_OPTIONS   => {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1};
 
-use version; our $VERSION = qv('1.1.0');
 
 readonly    getFilePath     => my %filePath;    # path to config file
 private     config          => my %config;      # in memory config file
@@ -166,7 +167,6 @@ sub set {
         carp "Can't write to config file ".$self->getFilePath;
     }
 }
-
 
 1; # Magic true value required at end of module
 __END__
