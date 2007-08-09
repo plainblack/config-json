@@ -3,12 +3,17 @@ package Config::JSON;
 use warnings;
 use strict;
 use Carp;
+use Class::InsideOut qw(readonly id register private);
 use JSON;
 use List::Util;
+
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
 use constant JSON_OPTIONS   => {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1};
 
 use version; our $VERSION = qv('1.1.0');
+
+readonly    getFilePath     => my %filePath;    # path to config file
+private     config          => my %config;      # in memory config file
 
 #-------------------------------------------------------------------
 sub addToArray {
@@ -54,19 +59,19 @@ sub create {
 sub delete {
     my $self = shift;
     my $param = shift;
-    my $directive   = $self->{_config};
+    my $directive   = $config{id $self};
     my @parts       = split "/", $param;
     my $lastPart    = pop @parts;
     foreach my $part (@parts) {
         $directive = $directive->{$part};
     }
     delete $directive->{$lastPart};
-    if (open(my $FILE,">",$self->getFilename)) {
-        print $FILE FILE_HEADER."\n".objToJson($self->{_config}, JSON_OPTIONS);
+    if (open(my $FILE,">",$self->getFilePath)) {
+        print $FILE FILE_HEADER."\n".objToJson($config{id $self}, JSON_OPTIONS);
         close($FILE);
     } 
     else {
-        carp "Can't write to config file ".$self->getFilename;
+        carp "Can't write to config file ".$self->getFilePath;
     }
 }
 
@@ -96,17 +101,10 @@ sub deleteFromHash {
 
 
 #-------------------------------------------------------------------
-sub DESTROY {
-    my $self = shift;
-    undef $self;
-}
-
-
-#-------------------------------------------------------------------
 sub get {
     my $self        = shift;
     my $property    = shift;
-    my $value       = $self->{_config};
+    my $value       = $config{id $self};
     foreach my $part (split "/", $property) {
         $value = $value->{$part};
     }
@@ -117,7 +115,8 @@ sub get {
 #-------------------------------------------------------------------
 sub getFilename {
     my $self = shift;
-    return $self->{_pathToFile};
+    my @path = split "/", $self->getFilePath;
+    return pop @path;
 }
 
 
@@ -133,8 +132,9 @@ sub new {
         close($FILE);
         my $conf = jsonToObj($json);
         croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
-        my $self = {_pathToFile=>$pathToFile, _config=>$conf};
-        bless $self, $class;
+        my $self = register($class);
+        $filePath{id $self} = $pathToFile;
+        $config{id $self}   = $conf;
         return $self;
     } 
     else {
@@ -148,7 +148,7 @@ sub set {
     my $self        = shift;
     my $property    = shift;
     my $value       = shift;
-    my $directive   = $self->{_config};
+    my $directive   = $config{id $self};
     my @parts       = split "/", $property;
     my $lastPart    = pop @parts;
     foreach my $part (@parts) {
@@ -158,12 +158,12 @@ sub set {
         $directive = $directive->{$part};
     }
     $directive->{$lastPart} = $value;
-    if (open(my $FILE, ">" ,$self->getFilename)) {
-        print {$FILE} FILE_HEADER."\n".objToJson($self->{_config}, JSON_OPTIONS);
+    if (open(my $FILE, ">" ,$self->getFilePath)) {
+        print {$FILE} FILE_HEADER."\n".objToJson($config{id $self}, JSON_OPTIONS);
         close($FILE);
     } 
     else {
-        carp "Can't write to config file ".$self->getFilename;
+        carp "Can't write to config file ".$self->getFilePath;
     }
 }
 
@@ -199,7 +199,8 @@ This document describes Config::JSON version 1.1.0
  $config->addToHash($name, $key, $value);
  $config->addToArray($name, $value);
 
- my $path = $config->getFilename;
+ my $path = $config->getFilePath;
+ my $filename = $config->getFilename;
 
 =head2 Example Config File
 
@@ -325,15 +326,6 @@ The name of the hash.
 
 The key to delete.
 
-=cut
-
-
-
-
-=head2 DESTROY ( )
-
-Deconstructor.
-
 
 
 =head2 get ( directive ) 
@@ -347,6 +339,12 @@ The name of the directive to return.
 
 
 =head2 getFilename ( )
+
+Returns the filename for this config.
+
+
+
+=head2 getFilePath ( ) 
 
 Returns the filename and path for this config.
 
@@ -409,6 +407,8 @@ Config::JSON requires no configuration files or environment variables.
 =item JSON
 
 =item List::Util
+
+=item Class::InsideOut
 
 =item Test::More
 

@@ -6,6 +6,7 @@ version_from: lib/Config/JSON.pm
 installdirs:  site
 requires:
     List::Util:             0
+    Class::InsideOut:       0
     JSON:                	0
     Test::More:             0
     Test::Deep:			    0

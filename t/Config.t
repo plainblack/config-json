@@ -1,4 +1,4 @@
-use Test::More tests => 24;
+use Test::More tests => 25;
 
 use lib '../lib';
 use Test::Deep;
@@ -50,8 +50,9 @@ else {
 $config = Config::JSON->new("/tmp/test.conf");
 isa_ok($config, "Config::JSON" );
 
-# getFilename
-is( $config->getFilename,"/tmp/test.conf","getFilename()" );
+# getFilePath and getFilename
+is( $config->getFilePath,"/tmp/test.conf","getFilePath()" );
+is( $config->getFilename,"test.conf","getFilename()" );
 
 # get
 ok( $config->get("dsn") ne "", "get()" );

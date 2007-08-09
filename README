@@ -17,6 +17,7 @@ DEPENDENCIES
 
 JSON
 List::Util
+Class::InsideOut
 Test::More
 version
 Test::Deep
