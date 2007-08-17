@@ -6,6 +6,6 @@ README
 lib/Config/JSON.pm
 t/00.load.t
 t/Config.t
-t/perlcritic.t
-t/pod-coverage.t
-t/pod.t
+authors.t/perlcritic.t
+authors.t/pod-coverage.t
+authors.t/pod.t

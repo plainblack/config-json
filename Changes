@@ -1,5 +1,8 @@
 Revision history for Config-JSON
 
+1.1.1   Fri Aug 17 11:00:00 2007
+    Removed requirements for author related tests. Should make it easier to install for the average user.
+
 1.1.0   Wed Aug 08 20:00:00 2007
     Added direct access multi-level directive support.
     Now is an Inside Out object per Perl Best Practices.
