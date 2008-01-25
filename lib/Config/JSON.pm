@@ -6,7 +6,7 @@ use Carp;
 use Class::InsideOut qw(readonly id register private);
 use JSON;
 use List::Util;
-use version; our $VERSION = qv('1.1.2');
+use version; our $VERSION = qv('1.1.3');
 
 
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
@@ -178,7 +178,7 @@ Config::JSON - A JSON based config file system.
 
 =head1 VERSION
 
-This document describes Config::JSON version 1.1.2
+This document describes Config::JSON version 1.1.3
 
 
 =head1 SYNOPSIS
