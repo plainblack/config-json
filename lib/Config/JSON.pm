@@ -6,7 +6,7 @@ use Carp;
 use Class::InsideOut qw(readonly id register private);
 use JSON;
 use List::Util;
-use version; our $VERSION = qv('1.1.3');
+use version; our $VERSION = qv('1.1.4');
 
 
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
@@ -66,8 +66,11 @@ sub delete {
         $directive = $directive->{$part};
     }
     delete $directive->{$lastPart};
+
+    # If JSON dies, don't kill our existing file.
+    my $json = JSON->new->pretty->encode($config{id $self});
     if (open(my $FILE,">",$self->getFilePath)) {
-        print $FILE FILE_HEADER."\n".JSON->new->pretty->encode($config{id $self});
+        print $FILE FILE_HEADER."\n".$json;
         close($FILE);
     } 
     else {
@@ -126,10 +129,8 @@ sub new {
     my $pathToFile = shift;
     if (open(my $FILE, "<", $pathToFile)) {
         # slurp
-        my $holdTerminator = $/;
-        undef $/;
+        local $/ = undef;
         my $json = <$FILE>;
-        $/ = $holdTerminator;  
         close($FILE);
         my $conf = JSON->new->relaxed(1)->decode($json);
         croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
@@ -178,7 +179,7 @@ Config::JSON - A JSON based config file system.
 
 =head1 VERSION
 
-This document describes Config::JSON version 1.1.3
+This document describes Config::JSON version 1.1.4
 
 
 =head1 SYNOPSIS
