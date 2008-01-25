@@ -1,4 +1,4 @@
-Config-JSON version 1.1.1
+Config-JSON version 1.1.2
 
 A JSON based config file parser/writer.
 
@@ -15,16 +15,20 @@ To install this module, run the following commands:
 
 DEPENDENCIES
 
-JSON
+JSON 2.0 or higher
 List::Util
 Class::InsideOut
-Test::More
 version
+
+The following are only used for tests:
+Test::More
+Test::Deep
+File::Temp
 
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2007, JT Smith
+Copyright (C) 2006-2008, JT Smith
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

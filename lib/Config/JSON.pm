@@ -6,11 +6,10 @@ use Carp;
 use Class::InsideOut qw(readonly id register private);
 use JSON;
 use List::Util;
-use version; our $VERSION = qv('1.1.1');
+use version; our $VERSION = qv('1.1.2');
 
 
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
-use constant JSON_OPTIONS   => {pretty => 1, indent => 4, autoconv=>0, skipinvalid=>1};
 
 
 readonly    getFilePath     => my %filePath;    # path to config file
@@ -68,7 +67,7 @@ sub delete {
     }
     delete $directive->{$lastPart};
     if (open(my $FILE,">",$self->getFilePath)) {
-        print $FILE FILE_HEADER."\n".objToJson($config{id $self}, JSON_OPTIONS);
+        print $FILE FILE_HEADER."\n".JSON->new->pretty->encode($config{id $self});
         close($FILE);
     } 
     else {
@@ -125,13 +124,14 @@ sub getFilename {
 sub new {
     my $class = shift;
     my $pathToFile = shift;
-    my $json = "";
     if (open(my $FILE, "<", $pathToFile)) {
-        while (my $line = <$FILE>) {
-            $json .= $line unless ($line =~ /^\s*#/);
-        }
+        # slurp
+        my $holdTerminator = $/;
+        undef $/;
+        my $json = <$FILE>;
+        $/ = $holdTerminator;  
         close($FILE);
-        my $conf = jsonToObj($json);
+        my $conf = JSON->new->relaxed(1)->decode($json);
         croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
         my $self = register($class);
         $filePath{id $self} = $pathToFile;
@@ -160,7 +160,7 @@ sub set {
     }
     $directive->{$lastPart} = $value;
     if (open(my $FILE, ">" ,$self->getFilePath)) {
-        print {$FILE} FILE_HEADER."\n".objToJson($config{id $self}, JSON_OPTIONS);
+        print {$FILE} FILE_HEADER."\n".JSON->new->pretty->encode($config{id $self});
         close($FILE);
     } 
     else {
@@ -178,7 +178,7 @@ Config::JSON - A JSON based config file system.
 
 =head1 VERSION
 
-This document describes Config::JSON version 1.1.1
+This document describes Config::JSON version 1.1.2
 
 
 =head1 SYNOPSIS
@@ -404,13 +404,17 @@ Config::JSON requires no configuration files or environment variables.
 
 =over
 
-=item JSON
+=item JSON 2.0 or higher
 
 =item List::Util
 
 =item Class::InsideOut
 
 =item Test::More
+
+=item Test::Deep
+
+=item File::Temp
 
 =item version
 
@@ -438,7 +442,7 @@ JT Smith  C<< <jt-at-plainblack-dot-com> >>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2006-2007, Plain Black Corporation L<http://www.plainblack.com/>. All rights reserved.
+Copyright (c) 2006-2008, Plain Black Corporation L<http://www.plainblack.com/>. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.

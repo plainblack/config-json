@@ -3,12 +3,15 @@ use Test::More tests => 25;
 use lib '../lib';
 use Test::Deep;
 use Config::JSON;
+use File::Temp qw/ tempfile /;
 
-my $config = Config::JSON->create("/tmp/test.conf");
+my ($fh, $filename) = tempfile();
+close($fh);
+my $config = Config::JSON->create($filename);
 ok (defined $config, "create new config");
 
 # set up test data
-if (open(my $file, ">", "/tmp/test.conf")) {
+if (open(my $file, ">", $filename)) {
 my $testData = <<END;
 # config-file-type: JSON 1
 
@@ -47,12 +50,15 @@ END
 else {
 	ok(0, "set up test data");
 }
-$config = Config::JSON->new("/tmp/test.conf");
+
+$config = Config::JSON->new($filename);
 isa_ok($config, "Config::JSON" );
 
 # getFilePath and getFilename
-is( $config->getFilePath,"/tmp/test.conf","getFilePath()" );
-is( $config->getFilename,"test.conf","getFilename()" );
+is( $config->getFilePath, $filename, "getFilePath()" );
+my $justTheName = $filename;
+$justTheName =~ s{.*/(\w+)$}{$1}xmsg;
+is( $config->getFilename, $justTheName, "getFilename()" );
 
 # get
 ok( $config->get("dsn") ne "", "get()" );
@@ -104,6 +110,3 @@ $hash = $config->get("this/that/hash");
 ok(!(exists $hash->{three}), "deleteFromHash() multilevel");
 
 
-END: {
-    unlink "/tmp/test.conf";
-}

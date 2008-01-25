@@ -1,5 +1,10 @@
 Revision history for Config-JSON
 
+1.1.2   Thu Jan 23 23:00:00 2008
+    fix: #27078: predictable filename in /tmp
+    fix: #29122: Dependency declaration on Test::Deep missing
+    fix: #32633: Config::JSON 1.1.1 doesn't work with JSON 2.x (thanks to Ernesto Hernández-Novich for patch)
+
 1.1.1   Fri Aug 17 11:00:00 2007
     Removed requirements for author related tests. Should make it easier to install for the average user.
 

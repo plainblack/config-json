@@ -10,9 +10,11 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM => {
 	'List::Util' 		    => 0,
-	'JSON'	     		    => 0,
+	'JSON'	     		    => 2.0,
     'Class::InsideOut'      => 0,
     'Test::More' 		    => 0,
+    'Test::Deep'            => 0,
+    'File::Temp'            => 0,
     'version'    		    => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
