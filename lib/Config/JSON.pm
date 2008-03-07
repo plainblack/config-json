@@ -132,7 +132,10 @@ sub new {
         local $/ = undef;
         my $json = <$FILE>;
         close($FILE);
-        my $conf = JSON->new->relaxed(1)->decode($json);
+        my $conf;
+        eval {
+            $conf = JSON->new->relaxed(1)->decode($json);
+        };
         croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
         my $self = register($class);
         $filePath{id $self} = $pathToFile;
