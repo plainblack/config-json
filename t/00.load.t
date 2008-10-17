@@ -1,5 +1,5 @@
 use Test::More tests => 1;
-use lib '../lib';
+use blib;
 
 use_ok( 'Config::JSON' );
 

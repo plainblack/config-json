@@ -1,4 +1,4 @@
-use Test::More tests => 25;
+use Test::More tests => 26;
 
 use blib;
 use Test::Deep;
@@ -82,6 +82,8 @@ ok(!(defined $config->get("dsn")), "delete()");
 $config->delete("stats/vitality");
 ok(!(defined $config->get("stats/vitality")), "delete() multilevel");
 ok(defined $config->get("stats"), "delete() multilevel - doesn't delete parent");
+$config->delete('this/that/hash');
+ok(defined $config->get('this/that/scalar'), "delete() multilevel - doesn't delete siblings");
 
 # addToArray
 $config->addToArray("colors","TEST");

@@ -1,5 +1,8 @@
 Revision history for Config-JSON
 
+1.2.0   Fri Oct 17 10:14:02 EDT 2008
+    Patch from Christopher Nehren to enable configuration file includes as in Apache.
+
 1.1.4   Fri Jan 23 16:20:00 2008
     Patch from Doug Bell that uses better slurping action, and fixes a problem with killing config files on set() errors.
     Switched to using blib instead of relative lib path for tests.
