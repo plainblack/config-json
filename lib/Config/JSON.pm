@@ -96,7 +96,7 @@ sub get {
 
 	# they want a specific property
 	if (defined $property) {
-		
+
 		# look in this config
 		my $value = $config{id $self};
 		foreach my $part (split "/", $property) {
@@ -150,8 +150,9 @@ sub new {
         $isInclude{$id} = $options->{isInclude};
 		
 		# process includes
-		foreach my $include (@{$self->get('includes')}) {
-			push @{$includes{$id}},  $class->new($include, 1);
+		my @includes = map { glob $_ } @{ $self->get('includes') || [] };
+		foreach my $include (@includes) {
+			push @{$includes{$id}},  $class->new($include, {isInclude=>1});
 		}
 		
         return $self;
