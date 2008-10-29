@@ -4,6 +4,8 @@ use warnings;
 use strict;
 use Carp;
 use Class::InsideOut qw(readonly id register private);
+use File::Copy;
+use File::Temp qw/ tempfile /;
 use JSON;
 use List::Util;
 use version; our $VERSION = qv('1.3.0');
@@ -215,16 +217,25 @@ sub set {
 #-------------------------------------------------------------------
 sub write {
 	my $self = shift;
+	my $realfile = $self->getFilePath;
 
-    # If JSON dies it will do so before we open the file
+	# convert data to json
     my $json = JSON->new->pretty->encode($config{id $self});
-    if (open(my $FILE,">",$self->getFilePath)) {
+
+	# create a temporary config file
+	my ($fh, $tempfile) = tempfile();
+	close($fh);
+    if (open(my $FILE,">", $tempfile)) {
         print $FILE FILE_HEADER."\n".$json;
         close($FILE);
     } 
     else {
-        carp "Can't write to config file ".$self->getFilePath;
+        croak "Can't write (".$realfile.") to temporary file (".$tempfile.")";
     }
+	
+	# move the temp file over the top of the existing file
+	copy($tempfile, $realfile) or croak "Can't copy temporary file (".$tempfile.") to config file (".$realfile.")";
+	unlink $tempfile or carp "Can't delete temporary config file (".$tempfile.")";
 }
 
 
