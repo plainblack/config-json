@@ -6,9 +6,6 @@ README
 lib/Config/JSON.pm
 t/00.load.t
 t/Config.t
-t/Duplicate.t
-t/Include.t
-t/Wildcard.t
 authors.t/perlcritic.t
 authors.t/pod-coverage.t
 authors.t/pod.t
