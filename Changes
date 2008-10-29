@@ -1,6 +1,6 @@
 Revision history for Config-JSON
 
-1.3.0   Tue Oct 28 17:00:00 2008
+1.3.0   Tue Oct 28 23:00:00 2008
     Rewrote includes to be much cleaner.
     Fixed a bug where a full disk could cause Config::JSON to destroy the config file.
 
