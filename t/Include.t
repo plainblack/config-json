@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More tests => 55;
 
-use blib;
+use lib '../lib';
 use Test::Deep;
 use Config::JSON;
 use File::Temp qw/ tempfile /;
@@ -21,7 +21,7 @@ my $secondConfig = Config::JSON->create($secondIncludeFile);
 # set up main config file with include section
 if (open(my $file, ">", $mainConfigFile)) {
     my $testData = <<END;
-
+# config-file-type: JSON 1
 {
     "dsn" : "DBI:mysql:test",
     "user" : "tester",

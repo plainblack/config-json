@@ -15,7 +15,7 @@ use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
 readonly    getFilePath     => my %filePath;    # path to config file
 readonly    isInclude       => my %isInclude;   # is an include file
 private     config          => my %config;      # in memory config file
-private     includes     	=> my %includes;    # keeps track of any included config files
+readonly    getIncludes     => my %includes;    # keeps track of any included config files
 
 #-------------------------------------------------------------------
 sub addToArray {
@@ -115,9 +115,9 @@ sub get {
 	}
 	
 	# they want the whole properties list
-	my %whole;
+	my %whole = ();
 	foreach my $include (@{$includes{id $self}}) {
-		%whole = (%whole, %{$include->{config}->get});			
+		%whole = (%whole, %{$include->get});			
 	}
 	%whole = (%whole, %{$config{id $self}});
 	return \%whole;
@@ -169,15 +169,17 @@ sub set {
 	# see if the directive exists in this config
     my $directive	= $config{id $self};
     my @parts 		= split "/", $property;
-	my $numParts = scalar @parts;
+	my $numParts 	= scalar @parts;
 	for (my $i=0; $i < $numParts; $i++) {
-		my $part = $parts[$i - 1];
+		my $part = $parts[$i];
 		if (exists $directive->{$part}) { # exists so we continue
-			$directive = $directive->{$part};
 			if ($i == $numParts - 1) { # we're on the last part
-				$directive = $value;
+				$directive->{$part} = $value;
 				$self->write;
 				return 1;
+			}
+			else {
+				$directive = $directive->{$part};
 			}
 		}
 		else { # doesn't exist so we quit
@@ -251,11 +253,11 @@ This document describes Config::JSON version 1.3.0
  $config->set($directive,$value);
 
  $config->delete($directive);
- $config->deleteFromHash($name, $key);
- $config->deleteFromArray($name, $value);
+ $config->deleteFromHash($directive, $key);
+ $config->deleteFromArray($directive, $value);
 
- $config->addToHash($name, $key, $value);
- $config->addToArray($name, $value);
+ $config->addToHash($directive, $key, $value);
+ $config->addToArray($directive, $value);
 
  my $path = $config->getFilePath;
  my $filename = $config->getFilename;
@@ -263,7 +265,6 @@ This document describes Config::JSON version 1.3.0
 =head2 Example Config File
 
  # config-file-type: JSON 1
-
  {
         "dsn" : "DBI:mysql:test",
         "user" : "tester",
@@ -276,7 +277,10 @@ This document describes Config::JSON version 1.3.0
         "stats" : {
                 "health" : 32,
                 "vitality" : 11
-        }
+        },
+		
+		# including another file
+		"includes" : ["macros.conf"]
  } 
 
 
@@ -286,9 +290,11 @@ This package parses the config files written in JSON. It also does some non-JSON
 
 If you want to see it in action, it is used as the config file system in WebGUI L<http://www.webgui.org/>.
 
+
 =head2 Why?
 
 Why build yet another config file system? Well there are a number of reasons: We used to use other config file parsers, but we kept running into limitations. We already use JSON in our app, so using JSON to store config files means using less memory because we already have the JSON parser in memory. In addition, with JSON we can have any number of hierarchcal data structures represented in the config file, whereas most config files will give you only one level of hierarchy, if any at all. JSON parses faster than XML and YAML. JSON is easier to read and edit than XML. Many other config file systems allow you to read a config file, but they don't provide any mechanism or utilities to write back to it. JSON is taint safe. JSON is easily parsed by languages other than Perl when we need to do that.
+
 
 =head2 Multi-level Directives
 
@@ -301,9 +307,24 @@ multiple elements of the hash when specifying a directive name by simply delimit
 
 You may do this wherever you specify a directive name.
 
+
 =head2 Comments
 
 You can put comments in the config file as long as # is the first non-space character on the line. However, if you use this API to write to the config file, your comments will be eliminated.
+
+
+=head2 Includes
+
+There is a special directive called "includes", which is an array of include files that may be brought in to
+the config. Even the files you include can have an "includes" directive, so you can do hierarchical includes.
+
+Any directive in the main file will take precedence over the directives in the includes. Likewise the files
+listed first in the "includes" directive will have precedence over the files that come after it. When writing
+to the files, the same precedence is followed.
+
+If you're setting a new directive that doesn't currently exist, it will only be written to the main file.
+
+If a directive is deleted, it will be deleted from all files, including the includes.
 
 =head1 INTERFACE 
 
@@ -408,6 +429,12 @@ Returns the filename and path for this config.
 
 
 
+=head2 getIncludes ( )
+
+Returns an array reference of Config::JSON objects that are files included by this config.
+
+
+
 =head2 new ( pathToFile )
 
 Constructor. Builds an object around a config file.
@@ -431,6 +458,10 @@ A directive name.
 The value to set the paraemter to. Can be a scalar, hash reference, or array reference.
 
 
+
+=head2 write ( )
+
+Writes the file to the filesystem. Normally you'd never need to call this as it's called automatically by the other methods when a change occurs.
 
 
 

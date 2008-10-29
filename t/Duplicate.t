@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use Test::More tests => 22;
 
-#use blib;
 use lib '../lib';
 use Test::Deep;
 use Config::JSON;

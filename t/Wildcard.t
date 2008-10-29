@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More tests => 12;
 
-use blib;
+use lib '../lib';
 use Test::Deep;
 use Config::JSON;
 use File::Temp qw/ tempfile /;

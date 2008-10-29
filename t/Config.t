@@ -1,6 +1,6 @@
 use Test::More tests => 26;
 
-use blib;
+use lib '../lib';
 use Test::Deep;
 use Config::JSON;
 use File::Temp qw/ tempfile /;
