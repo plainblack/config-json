@@ -1,4 +1,4 @@
-use Test::More tests => 26;
+use Test::More tests => 28;
 
 use lib '../lib';
 use Test::Deep;
@@ -67,6 +67,8 @@ is( ref $config->get("colors"), "ARRAY", "get() array" );
 is( $config->get("this/that/scalar"), "foo", "get() multilevel");
 is( ref $config->get("this/that/hash"), "HASH", "get() hash multilevel" );
 is( ref $config->get("this/that/array"), "ARRAY", "get() array multilevel" );
+eval{$config->get("this/that/array/non-existant-element")};
+ok($@, "Throw an error when trying to access an element of an array.");
 
 # set
 $config->set('privateArray', ['a', 'b', 'c']);
@@ -75,6 +77,9 @@ $config->set('cars/ford', "mustang");
 is($config->get('cars/ford'), "mustang", 'set() multilevel non-exisistant');
 $config->set('cars/ford', [qw( mustang pinto maverick )]);
 cmp_bag($config->get('cars/ford'),[qw( mustang pinto maverick )], 'set() multilevel');
+my $reconfig = Config::JSON->new($filename);
+cmp_bag($config->get('cars/ford'),$reconfig->get('cars/ford'), 'set() multilevel after re-reading config file');
+
 
 # delete 
 $config->delete("dsn");

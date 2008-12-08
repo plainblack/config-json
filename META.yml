@@ -1,16 +1,17 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Config::JSON
-version:      1.3.0
+version:      1.3.1
 version_from: lib/Config/JSON.pm
 installdirs:  site
 requires:
-    List::Util:             0
-    Class::InsideOut:       0
-    JSON:                   2.0	
-    Test::More:             0
-    Test::Deep:             0
-    File::Temp:             0
+    List::Util:             1.19
+    Class::InsideOut:       1.06
+    JSON:                   2.12
+    Test::More:             0.7
+    Test::Deep:             0.095
+    File::Temp:             0.18
+    version:                0.7203
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17

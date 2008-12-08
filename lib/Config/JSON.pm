@@ -8,7 +8,7 @@ use File::Copy;
 use File::Temp qw/ tempfile /;
 use JSON;
 use List::Util;
-use version; our $VERSION = qv('1.3.0');
+use version; our $VERSION = qv('1.3.1');
 
 
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
@@ -102,7 +102,10 @@ sub get {
 		# look in this config
 		my $value = $config{id $self};
 		foreach my $part (split "/", $property) {
-			$value = $value->{$part};
+			$value = eval{$value->{$part}};
+            if ($@) {
+                croak "Can't access $property. $@";
+            }
 		}
 		return $value if (defined $value);
 
@@ -142,7 +145,7 @@ sub new {
         close($FILE);
         my $conf;
         eval {
-            $conf = JSON->new->relaxed(1)->decode($json);
+            $conf = JSON->new->relaxed->utf8->decode($json);
         };
         croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
         my $self 		= register($class);
@@ -220,22 +223,15 @@ sub write {
 	my $realfile = $self->getFilePath;
 
 	# convert data to json
-    my $json = JSON->new->pretty->encode($config{id $self});
+    my $json = JSON->new->pretty->utf8->canonical->encode($config{id $self});
 
 	# create a temporary config file
-	my ($fh, $tempfile) = tempfile();
-	close($fh);
-    if (open(my $FILE,">", $tempfile)) {
-        print $FILE FILE_HEADER."\n".$json;
-        close($FILE);
-    } 
-    else {
-        croak "Can't write (".$realfile.") to temporary file (".$tempfile.")";
-    }
+	my ($fh, $tempfile) = tempfile(UNLINK=>1);
+    print {$fh} FILE_HEADER."\n".$json;
+    close($fh);
 	
 	# move the temp file over the top of the existing file
 	copy($tempfile, $realfile) or croak "Can't copy temporary file (".$tempfile.") to config file (".$realfile.")";
-	unlink $tempfile or carp "Can't delete temporary config file (".$tempfile.")";
 }
 
 
@@ -249,7 +245,7 @@ Config::JSON - A JSON based config file system.
 
 =head1 VERSION
 
-This document describes Config::JSON version 1.3.0
+This document describes Config::JSON version 1.3.1
 
 
 =head1 SYNOPSIS
