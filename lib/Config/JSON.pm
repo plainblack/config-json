@@ -8,7 +8,7 @@ use File::Spec;
 use File::Temp qw(tempfile);
 use JSON;
 use List::Util;
-use version; our $VERSION = qv('1.3.1');
+use version; our $VERSION = qv('1.4.0');
 
 
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
@@ -28,6 +28,38 @@ sub addToArray {
       	push(@{$array}, $value);
       	$self->set($property, $array);
 	}
+}
+
+#-------------------------------------------------------------------
+sub addToArrayAfter {
+    my ($self, $property, $afterValue, $value) = @_;
+    my $array = $self->get($property);
+    unless (defined List::Util::first { $value eq $_ } @{ $array }) { # check if it already exists
+        my $idx = 0;
+        for (; $idx < $#{ $array }; $idx++) {
+            if ($array->[$idx] eq $afterValue) {
+                last;
+            }
+        }
+        splice @{ $array }, $idx + 1, 0, $value;
+        $self->set($property, $array);
+    }
+}
+
+#-------------------------------------------------------------------
+sub addToArrayBefore {
+    my ($self, $property, $beforeValue, $value) = @_;
+    my $array = $self->get($property);
+    unless (defined List::Util::first { $value eq $_ } @{ $array }) { # check if it already exists
+        my $idx = $#{ $array };
+        for (; $idx > 0; $idx--) {
+            if ($array->[$idx] eq $beforeValue) {
+                last;
+            }
+        }
+        splice @{ $array }, $idx , 0, $value;
+        $self->set($property, $array);
+    }
 }
 
 #-------------------------------------------------------------------
@@ -274,22 +306,22 @@ This document describes Config::JSON version 1.3.1
 
  # config-file-type: JSON 1
  {
-        "dsn" : "DBI:mysql:test",
-        "user" : "tester",
-        "password" : "xxxxxx", 
+    "dsn" : "DBI:mysql:test",
+    "user" : "tester",
+    "password" : "xxxxxx",
 
-        # some colors to choose from
-        "colors" : [ "red", "green", "blue" ],
+    # some colors to choose from
+    "colors" : [ "red", "green", "blue" ],
 
-        # some statistics
-        "stats" : {
-                "health" : 32,
-                "vitality" : 11
-        },
-		
-		# including another file
-		"includes" : ["macros.conf"]
- } 
+    # some statistics
+    "stats" : {
+            "health" : 32,
+            "vitality" : 11
+    },
+
+    # including another file
+    "includes" : ["macros.conf"]
+ }
 
 
 =head1 DESCRIPTION
@@ -301,7 +333,19 @@ If you want to see it in action, it is used as the config file system in WebGUI 
 
 =head2 Why?
 
-Why build yet another config file system? Well there are a number of reasons: We used to use other config file parsers, but we kept running into limitations. We already use JSON in our app, so using JSON to store config files means using less memory because we already have the JSON parser in memory. In addition, with JSON we can have any number of hierarchcal data structures represented in the config file, whereas most config files will give you only one level of hierarchy, if any at all. JSON parses faster than XML and YAML. JSON is easier to read and edit than XML. Many other config file systems allow you to read a config file, but they don't provide any mechanism or utilities to write back to it. JSON is taint safe. JSON is easily parsed by languages other than Perl when we need to do that.
+Why build yet another config file system? Well there are a number
+of reasons: We used to use other config file parsers, but we kept
+running into limitations. We already use JSON in our app, so using
+JSON to store config files means using less memory because we already
+have the JSON parser in memory. In addition, with JSON we can have
+any number of hierarchcal data structures represented in the config
+file, whereas most config files will give you only one level of
+hierarchy, if any at all. JSON parses faster than XML and YAML.
+JSON is easier to read and edit than XML. Many other config file
+systems allow you to read a config file, but they don't provide any
+mechanism or utilities to write back to it. JSON is taint safe.
+JSON is easily parsed by languages other than Perl when we need to
+do that.
 
 
 =head2 Multi-level Directives
@@ -334,7 +378,7 @@ If you're setting a new directive that doesn't currently exist, it will only be 
 
 If a directive is deleted, it will be deleted from all files, including the includes.
 
-=head1 INTERFACE 
+=head1 INTERFACE
 
 =head2 addToArray ( directive, value )
 
@@ -347,6 +391,42 @@ The name of the array.
 =head3 value
 
 The value to add.
+
+=head2 addToArrayBefore ( directive, insertBefore, value )
+
+Inserts a value into an array immediately before another item.  If
+that item can't be found, inserts at the beginning on the array.
+
+=head3 directive
+
+The name of the array.
+
+=head3 insertBefore
+
+The value to search for and base the positioning on.
+
+=head3 value
+
+The value to insert.
+
+
+=head2 addToArrayAfter ( directive, insertAfter, value )
+
+Inserts a value into an array immediately after another item.  If
+that item can't be found, inserts at the end on the array.
+
+=head3 directive
+
+The name of the array.
+
+=head3 insertAfter
+
+The value to search for and base the positioning on.
+
+=head3 value
+
+The value to insert.
+
 
 
 =head2 addToHash ( directive, key, value )
@@ -440,7 +520,6 @@ Returns the filename and path for this config.
 =head2 getIncludes ( )
 
 Returns an array reference of Config::JSON objects that are files included by this config.
-
 
 
 =head2 new ( pathToFile )

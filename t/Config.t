@@ -1,4 +1,4 @@
-use Test::More tests => 28;
+use Test::More tests => 34;
 
 use lib '../lib';
 use Test::Deep;
@@ -101,6 +101,24 @@ $config->deleteFromArray("colors","TEST");
 ok(!(grep /TEST/, @{$config->get("colors")}), "deleteFromArray()");
 $config->deleteFromArray("cars/ford", "fairlane");
 ok(!(grep /fairlane/, @{$config->get("cars/ford")}), "deleteFromArray() multilevel");
+
+# addToArrayBefore
+$config->addToArrayBefore("colors","green",'orange');
+is_deeply($config->get('colors'), [qw(red orange green blue)], "addToArrayBefore works");
+$config->addToArrayBefore("colors","green",'orange');
+is_deeply($config->get('colors'), [qw(red orange green blue)], "addToArrayBefore doesn't insert duplicate entries");
+$config->addToArrayBefore('colors', 'purple', 'black');
+is_deeply($config->get('colors'), [qw(black red orange green blue)], "addToArrayBefore with item that doesn't exist adds to beginning of array");
+$config->set('colors', [qw(red green blue)]);
+
+# addToArrayAfter
+$config->addToArrayAfter('colors', 'green', 'orange');
+is_deeply($config->get('colors'), [qw(red green orange blue)], "addToArrayAfter works");
+$config->addToArrayAfter('colors', 'green', 'orange');
+is_deeply($config->get('colors'), [qw(red green orange blue)], "addToArrayAfter doesn't insert duplicate entries");
+$config->addToArrayAfter('colors', 'purple', 'black');
+is_deeply($config->get('colors'), [qw(red green orange blue black)], "addToArrayAfter with item that doesn't exist adds to end of array");
+$config->set('colors', [qw(red green blue)]);
 
 # addToHash
 $config->addToHash("stats","TEST","VALUE");
