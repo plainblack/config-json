@@ -4,8 +4,8 @@ use warnings;
 use strict;
 use Carp;
 use Class::InsideOut qw(readonly id register private);
-use File::Copy;
-use File::Temp qw/ tempfile /;
+use File::Spec;
+use File::Temp qw(tempfile);
 use JSON;
 use List::Util;
 use version; our $VERSION = qv('1.3.1');
@@ -221,17 +221,18 @@ sub set {
 sub write {
 	my $self = shift;
 	my $realfile = $self->getFilePath;
+    my $configDir = File::Spec->catpath((File::Spec->splitpath($realfile))[0,1], '');
 
 	# convert data to json
     my $json = JSON->new->pretty->utf8->canonical->encode($config{id $self});
 
 	# create a temporary config file
-	my ($fh, $tempfile) = tempfile(UNLINK=>1);
+	my ($fh, $tempfile) = tempfile(DIR => $configDir);
     print {$fh} FILE_HEADER."\n".$json;
     close($fh);
 	
 	# move the temp file over the top of the existing file
-	copy($tempfile, $realfile) or croak "Can't copy temporary file (".$tempfile.") to config file (".$realfile.")";
+    rename($tempfile, $realfile) or croak "Can't copy temporary file (".$tempfile.") to config file (".$realfile.")";
 }
 
 
