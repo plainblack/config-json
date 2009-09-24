@@ -278,7 +278,7 @@ Config::JSON - A JSON based config file system.
 
 =head1 VERSION
 
-This document describes Config::JSON version 1.3.1
+This document describes Config::JSON version 1.4.0
 
 
 =head1 SYNOPSIS
