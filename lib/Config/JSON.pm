@@ -5,8 +5,8 @@ use strict;
 use Carp;
 use Class::InsideOut qw(readonly id register private);
 use File::Spec;
-use File::Temp qw(tempfile);
-use JSON;
+use File::Temp ();
+use JSON ();
 use List::Util;
 use version; our $VERSION = qv('1.4.0');
 
@@ -259,7 +259,7 @@ sub write {
     my $json = JSON->new->pretty->utf8->canonical->encode($config{id $self});
 
 	# create a temporary config file
-	my ($fh, $tempfile) = tempfile(DIR => $configDir);
+	my ($fh, $tempfile) = File::Temp::tempfile( UNLINK => 0, DIR => $configDir);
     print {$fh} FILE_HEADER."\n".$json;
     close($fh);
 	
