@@ -5,14 +5,11 @@ use strict;
 use Carp;
 use Class::InsideOut qw(readonly id register private);
 use File::Spec;
-use File::Temp ();
-use JSON ();
+use JSON 2.0;
 use List::Util;
 use version; our $VERSION = qv('1.4.0');
 
-
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
-
 
 readonly    getFilePath     => my %filePath;    # path to config file
 readonly    isInclude       => my %isInclude;   # is an include file
@@ -251,20 +248,39 @@ sub set {
 
 #-------------------------------------------------------------------
 sub write {
-	my $self = shift;
-	my $realfile = $self->getFilePath;
-    my $configDir = File::Spec->catpath((File::Spec->splitpath($realfile))[0,1], '');
+    my $self = shift;
+    my $realfile = $self->getFilePath;
 
-	# convert data to json
+    # convert data to json
     my $json = JSON->new->pretty->utf8->canonical->encode($config{id $self});
 
-	# create a temporary config file
-	my ($fh, $tempfile) = File::Temp::tempfile( UNLINK => 0, DIR => $configDir);
-    print {$fh} FILE_HEADER."\n".$json;
-    close($fh);
-	
-	# move the temp file over the top of the existing file
-    rename($tempfile, $realfile) or croak "Can't copy temporary file (".$tempfile.") to config file (".$realfile.")";
+    my $to_write = FILE_HEADER . "\n" . $json;
+    my $needed_bytes = length $to_write;
+
+    # open as read/write
+    open my $fh, '+<:raw', $realfile or croak "Unable to open $realfile for write: $!";
+    my $current_bytes = (stat $fh)[7];
+    # shrink file if needed
+    if ($needed_bytes < $current_bytes) {
+        truncate $fh, $needed_bytes;
+    }
+    # make sure we can expand the file to the needed size before we overwrite it
+    elsif ($needed_bytes > $current_bytes) {
+        my $padding = q{ } x ($needed_bytes - $current_bytes);
+        sysseek $fh, 0, 2;
+        if (! syswrite $fh, $padding) {
+            sysseek $fh, 0, 0;
+            truncate $fh, $current_bytes;
+            close $fh;
+            croak "Unable to expand $realfile: $!";
+        }
+        sysseek $fh, 0, 0;
+        seek $fh, 0, 0;
+    }
+    print {$fh} $to_write;
+    close $fh;
+
+    return 1;
 }
 
 
@@ -589,8 +605,6 @@ Config::JSON requires no configuration files or environment variables.
 =item Test::More
 
 =item Test::Deep
-
-=item File::Temp
 
 =item version
 
