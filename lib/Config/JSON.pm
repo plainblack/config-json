@@ -654,7 +654,7 @@ JT Smith  C<< <jt-at-plainblack-dot-com> >>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2006-2008, Plain Black Corporation L<http://www.plainblack.com/>. All rights reserved.
+Copyright (c) 2006-2009, Plain Black Corporation L<http://www.plainblack.com/>. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
