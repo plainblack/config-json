@@ -92,7 +92,7 @@ sub delete {
 	
 	# find the directive
     my $directive   = $config{id $self};
-    my @parts       = split "/", $param;
+    my @parts       = $self->splitKeyParts($param);
     my $lastPart    = pop @parts;
     foreach my $part (@parts) {
         $directive = $directive->{$part};
@@ -133,7 +133,7 @@ sub get {
 
 		# look in this config
 		my $value = $config{id $self};
-		foreach my $part (split "/", $property) {
+		foreach my $part ($self->splitKeyParts($property)) {
 			$value = eval{$value->{$part}};
             if ($@) {
                 croak "Can't access $property. $@";
@@ -205,7 +205,7 @@ sub set {
 
 	# see if the directive exists in this config
     my $directive	= $config{id $self};
-    my @parts 		= split "/", $property;
+    my @parts 		= $self->splitKeyParts($property);
 	my $numParts 	= scalar @parts;
 	for (my $i=0; $i < $numParts; $i++) {
 		my $part = $parts[$i];
@@ -247,6 +247,14 @@ sub set {
 
 	# didn't find a place to write it	
 	return 0;
+}
+
+#-------------------------------------------------------------------
+sub splitKeyParts {
+    my ($self, $key) = @_;
+    my @parts = split /(?<!\\)\//, $key;
+    map {s{\\\/}{/}} @parts;
+    return @parts;
 }
 
 #-------------------------------------------------------------------
@@ -543,6 +551,18 @@ A directive name.
 =head3 value
 
 The value to set the paraemter to. Can be a scalar, hash reference, or array reference.
+
+
+
+=head2 splitKeyParts ( key )
+
+Returns an array of key parts.
+
+=head3 key
+
+A key string. Could be 'foo' (simple key), 'foo/bar' (a multilevel key referring to the bar key as a child of foo), or 'foo\/bar' (a simple key that contains a slash in the key). 
+
+=cut
 
 
 
