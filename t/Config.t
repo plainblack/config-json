@@ -1,4 +1,4 @@
-use Test::More tests => 37;
+use Test::More tests => 35;
 
 use lib '../lib';
 use Test::Deep;
@@ -77,12 +77,9 @@ $config->set('cars/ford', "mustang");
 is($config->get('cars/ford'), "mustang", 'set() multilevel non-exisistant');
 $config->set('cars/ford', [qw( mustang pinto maverick )]);
 cmp_bag($config->get('cars/ford'),[qw( mustang pinto maverick )], 'set() multilevel');
-$config->set('cdn/','/cdn/root');
-is($config->get('cdn/'),'/cdn/root', 'slash at the end of a key');
-$config->set('/cdn','/cdn/root');
-is($config->get('/cdn'),'/cdn/root', 'slash at the start of a key');
-$config->set('c\/dn','/cdn/root');
-is($config->get('c\/dn'),'/cdn/root', 'slash in the middle of a key');
+$config->addToHash('hash','cdn\\/','CDNRoot');
+my $hash = $config->get('hash');
+is $hash->{'cdn/'}, 'CDNRoot', 'allow for escaped slashes in keys';
 my $reconfig = Config::JSON->new($filename);
 cmp_bag($config->get('cars/ford'),$reconfig->get('cars/ford'), 'set() multilevel after re-reading config file');
 

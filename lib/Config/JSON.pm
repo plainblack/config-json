@@ -576,7 +576,9 @@ Returns an array of key parts.
 
 =head3 key
 
-A key string. Could be 'foo' (simple key), 'foo/bar' (a multilevel key referring to the bar key as a child of foo), or 'foo\/bar' (a simple key that contains a slash in the key). 
+A key string. Could be 'foo' (simple key), 'foo/bar' (a multilevel key referring to the bar key as a child of foo), or 'foo\/bar' (a simple key that contains a slash in the key). Don't forget to double escape in your perl code if you have a slash in your key parts like this:
+
+ $config->get('foo\\/bar');
 
 =cut
 
