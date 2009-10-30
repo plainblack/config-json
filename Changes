@@ -1,6 +1,7 @@
 Revision history for Config-JSON
 
 1.4.0
+    Fixed resetting permissions of file on write
     Fixed another bug that could lead to erasing the config file.
     Add addToArrayAfter and addToArrayBefore methods to more easily insert items into lists.
 
