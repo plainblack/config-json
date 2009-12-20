@@ -1,20 +1,82 @@
 package Config::JSON;
 
-use warnings;
-use strict;
-use Carp;
-use Class::InsideOut qw(readonly id register private);
+use Moose;
 use File::Spec;
 use JSON 2.0;
 use List::Util;
-use version; our $VERSION = qv('1.4.0');
 
 use constant FILE_HEADER    => "# config-file-type: JSON 1\n";
 
-readonly    getFilePath     => my %filePath;    # path to config file
-readonly    isInclude       => my %isInclude;   # is an include file
-private     config          => my %config;      # in memory config file
-readonly    getIncludes     => my %includes;    # keeps track of any included config files
+#-------------------------------------------------------------------
+has config => (
+    is => 'rw',
+    default => sub {{}},
+);
+
+#-------------------------------------------------------------------
+sub getFilePath {
+    my $self = shift;
+    return $self->pathToFile;
+}
+
+#-------------------------------------------------------------------
+has pathToFile => (
+   is       => 'ro',
+   required => 1,
+   trigger  => sub {
+        my ($self, $pathToFile, $old) = @_;
+        if (open(my $FILE, "<", $pathToFile)) {
+            # slurp
+            local $/ = undef;
+            my $json = <$FILE>;
+            close($FILE);
+            my $conf = eval { JSON->new->relaxed->utf8->decode($json); };
+            confess "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
+            $self->config($conf);
+		
+		    # process includes
+		    my @includes = map { glob $_ } @{ $self->get('includes') || [] };
+            my @loadedIncludes;
+	    	foreach my $include (@includes) {
+			    push @loadedIncludes,  __PACKAGE__->new(pathToFile=>$include, isInclude=>1);
+	    	}
+            $self->includes(\@loadedIncludes);
+        } 
+        else {
+            confess "Cannot read config file: ".$pathToFile;
+        }
+    },
+);
+
+#-------------------------------------------------------------------
+has isInclude => (
+    is      => 'ro',
+    default => 0,
+);
+
+#-------------------------------------------------------------------
+has includes => (
+    is => 'rw',
+    default => sub {[]},
+);
+
+#-------------------------------------------------------------------
+sub getIncludes {
+    my $self = shift;
+    return $self->includes;
+}
+
+#-------------------------------------------------------------------
+around BUILDARGS => sub {
+    my $orig = shift;
+    my $class = shift;
+    if ( @_ == 1 && ! ref $_[0] ) {
+        return $class->$orig(pathToFile => $_[0]);
+    }
+    else {
+        return $class->$orig(@_);
+    }
+};
 
 #-------------------------------------------------------------------
 sub addToArray {
@@ -73,9 +135,9 @@ sub create {
         close($FILE);
     } 
     else {
-        carp "Can't write to config file ".$filename;
+        warn "Can't write to config file ".$filename;
     }
-	return $class->new($filename);	
+	return $class->new(pathToFile=>$filename);	
 }
 
 #-------------------------------------------------------------------
@@ -83,12 +145,12 @@ sub delete {
     my ($self, $param) = @_;
 	
 	# inform the includes
-	foreach my $include (@{$includes{id $self}}) {
+	foreach my $include (@{$self->includes}) {
 		$include->delete($param);
 	}
 	
 	# find the directive
-    my $directive   = $config{id $self};
+    my $directive   = $self->config;
     my @parts       = $self->splitKeyParts($param);
     my $lastPart    = pop @parts;
     foreach my $part (@parts) {
@@ -129,17 +191,17 @@ sub get {
 	if (defined $property) {
 
 		# look in this config
-		my $value = $config{id $self};
+		my $value = $self->config;
 		foreach my $part ($self->splitKeyParts($property)) {
 			$value = eval{$value->{$part}};
             if ($@) {
-                croak "Can't access $property. $@";
+                confess "Can't access $property. $@";
             }
 		}
 		return $value if (defined $value);
 
 		# look through includes
-		foreach my $include (@{$includes{id $self}}) {
+		foreach my $include (@{$self->includes}) {
 			my $value = $include->get($property);
 			return $value if (defined $value);
 		}
@@ -150,50 +212,18 @@ sub get {
 	
 	# they want the whole properties list
 	my %whole = ();
-	foreach my $include (@{$includes{id $self}}) {
+	foreach my $include (@{$self->includes}) {
 		%whole = (%whole, %{$include->get});			
 	}
-	%whole = (%whole, %{$config{id $self}});
+	%whole = (%whole, %{$self->config});
 	return \%whole;
 }
 
 #-------------------------------------------------------------------
 sub getFilename {
     my $self = shift;
-    my @path = split "/", $self->getFilePath;
+    my @path = split "/", $self->pathToFile;
     return pop @path;
-}
-
-#-------------------------------------------------------------------
-sub new {
-    my ($class, $pathToFile, $options) = @_;
-    if (open(my $FILE, "<", $pathToFile)) {
-        # slurp
-        local $/ = undef;
-        my $json = <$FILE>;
-        close($FILE);
-        my $conf;
-        eval {
-            $conf = JSON->new->relaxed->utf8->decode($json);
-        };
-        croak "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
-        my $self 		= register($class);
-		my $id 			= id $self;
-        $filePath{$id} 	= $pathToFile;
-        $config{$id}   	= $conf;
-        $isInclude{$id} = $options->{isInclude};
-		
-		# process includes
-		my @includes = map { glob $_ } @{ $self->get('includes') || [] };
-		foreach my $include (@includes) {
-			push @{$includes{$id}},  $class->new($include, {isInclude=>1});
-		}
-		
-        return $self;
-    } 
-    else {
-        croak "Cannot read config file: ".$pathToFile;
-    }
 }
 
 #-------------------------------------------------------------------
@@ -201,7 +231,7 @@ sub set {
     my ($self, $property, $value) 	= @_;
 
 	# see if the directive exists in this config
-    my $directive	= $config{id $self};
+    my $directive	= $self->config;
     my @parts 		= $self->splitKeyParts($property);
 	my $numParts 	= scalar @parts;
 	for (my $i=0; $i < $numParts; $i++) {
@@ -222,14 +252,14 @@ sub set {
 	}
 
 	# see if any of the includes have this directive
-	foreach my $include (@{$includes{id $self}}) {
+	foreach my $include (@{$self->includes}) {
 		my $found = $include->set($property, $value);
 		return 1 if ($found);
 	}
 
 	# let's create the directive new in this config if it's not an include
 	unless ($self->isInclude) {
-		$directive	= $config{id $self};
+		$directive	= $self->config;
 		my $lastPart = pop @parts;
 		foreach my $part (@parts) {
 			unless (exists $directive->{$part}) {
@@ -257,16 +287,16 @@ sub splitKeyParts {
 #-------------------------------------------------------------------
 sub write {
     my $self = shift;
-    my $realfile = $self->getFilePath;
+    my $realfile = $self->pathToFile;
 
     # convert data to json
-    my $json = JSON->new->pretty->utf8->canonical->encode($config{id $self});
+    my $json = JSON->new->pretty->utf8->canonical->encode($self->config);
 
     my $to_write = FILE_HEADER . "\n" . $json;
     my $needed_bytes = length $to_write;
 
     # open as read/write
-    open my $fh, '+<:raw', $realfile or croak "Unable to open $realfile for write: $!";
+    open my $fh, '+<:raw', $realfile or confess "Unable to open $realfile for write: $!";
     my $current_bytes = (stat $fh)[7];
     # shrink file if needed
     if ($needed_bytes < $current_bytes) {
@@ -280,7 +310,7 @@ sub write {
             sysseek $fh, 0, 0;
             truncate $fh, $current_bytes;
             close $fh;
-            croak "Unable to expand $realfile: $!";
+            confess "Unable to expand $realfile: $!";
         }
         sysseek $fh, 0, 0;
         seek $fh, 0, 0;
@@ -311,6 +341,7 @@ This document describes Config::JSON version 1.4.0
 
  my $config = Config::JSON->create($pathToFile);
  my $config = Config::JSON->new($pathToFile);
+ my $config = Config::JSON->new(pathToFile=>$pathToFile);
 
  my $element = $config->get($directive);
 
@@ -323,7 +354,7 @@ This document describes Config::JSON version 1.4.0
  $config->addToHash($directive, $key, $value);
  $config->addToArray($directive, $value);
 
- my $path = $config->getFilePath;
+ my $path = $config->pathToFile;
  my $filename = $config->getFilename;
 
 =head2 Example Config File
@@ -535,15 +566,15 @@ Returns the filename for this config.
 
 
 
-=head2 getFilePath ( ) 
+=head2 pathToFile ( ) 
 
-Returns the filename and path for this config.
+Returns the filename and path for this config. May also be called as C<getFilePath> for backward campatibility sake.
 
 
 
-=head2 getIncludes ( )
+=head2 includes ( )
 
-Returns an array reference of Config::JSON objects that are files included by this config.
+Returns an array reference of Config::JSON objects that are files included by this config. May also be called as C<getIncludes> for backward compatibility sake.
 
 
 =head2 new ( pathToFile )
@@ -589,7 +620,6 @@ A key string. Could be 'foo' (simple key), 'foo/bar' (a multilevel key referring
 Writes the file to the filesystem. Normally you'd never need to call this as it's called automatically by the other methods when a change occurs.
 
 
-
 =head1 DIAGNOSTICS
 
 =over
@@ -608,77 +638,36 @@ We couldn't write to the config file. This usually means that the file system is
 
 =back
 
+=head1 PREREQS
 
-=head1 CONFIGURATION AND ENVIRONMENT
-
-Config::JSON requires no configuration files or environment variables.
-
-
-=head1 DEPENDENCIES
-
-=over
-
-=item JSON 2.0 or higher
-
-=item List::Util
-
-=item Class::InsideOut
-
-=item Test::More
-
-=item Test::Deep
-
-=item version
+L<JSON> L<Moose> L<List::Util> L<Test::More> L<Test::Deep>
 
 =back
 
 
-=head1 INCOMPATIBILITIES
+=head1 SUPPORT
 
-None reported.
+=over
 
+=item Repository
 
-=head1 BUGS AND LIMITATIONS
+L<http://github.com/plainblack/Config-JSON>
 
-No bugs have been reported.
+=item Bug Reports
 
-Please report any bugs or feature requests to
-C<bug-config-json@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org>.
+L<http://rt.cpan.org/Public/Dist/Display.html?Name=Config-JSON>
 
+=back
 
 =head1 AUTHOR
 
-JT Smith  C<< <jt-at-plainblack-dot-com> >>
+JT Smith  <jt-at-plainblack-dot-com>
 
+=head1 LEGAL
 
-=head1 LICENCE AND COPYRIGHT
+Config::JSON is Copyright 2009 Plain Black Corporation (L<http://www.plainblack.com/>) and is licensed under the same terms as Perl itself.
 
-Copyright (c) 2006-2009, Plain Black Corporation L<http://www.plainblack.com/>. All rights reserved.
+=cut
 
-This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See L<perlartistic>.
-
-
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
+no Moose;
+__PACKAGE__->meta->make_immutable;

@@ -1,5 +1,11 @@
 Revision history for Config-JSON
 
+1.5000 2009-12-19
+ - Converted Config::JSON to use Moose.
+ - Removed requirements for version and Class::InsideOut.
+ - Swiched to Dist::Zilla to build this package.
+ - Removed authors.t since I never use them anyway.
+
 1.4.0
     Fixed resetting permissions of file on write
     Fixed another bug that could lead to erasing the config file.
