@@ -131,7 +131,7 @@ is($config->get("this/that/hash/three"), 3, "addToHash() multilevel");
 
 # deleteFromHash
 $config->deleteFromHash("stats","TEST");
-my $hash = $config->get("stats");
+$hash = $config->get("stats");
 ok(!(exists $hash->{TEST}), "deleteFromHash()");
 $config->deleteFromHash("this/that/hash", "three");
 $hash = $config->get("this/that/hash");

@@ -633,9 +633,6 @@ We couldn't write to the config file. This usually means that the file system is
 
 L<JSON> L<Moose> L<List::Util> L<Test::More> L<Test::Deep>
 
-=back
-
-
 =head1 SUPPORT
 
 =over
