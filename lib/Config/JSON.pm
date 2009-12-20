@@ -322,18 +322,9 @@ sub write {
 }
 
 
-1; # Magic true value required at end of module
-__END__
-
 =head1 NAME
 
 Config::JSON - A JSON based config file system.
-
-
-=head1 VERSION
-
-This document describes Config::JSON version 1.4.0
-
 
 =head1 SYNOPSIS
 
