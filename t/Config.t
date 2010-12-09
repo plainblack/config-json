@@ -1,4 +1,4 @@
-use Test::More tests => 35;
+use Test::More tests => 36;
 
 use lib '../lib';
 use Test::Deep;
@@ -82,7 +82,8 @@ my $hash = $config->get('hash');
 is $hash->{'cdn/'}, 'CDNRoot', 'allow for escaped slashes in keys';
 my $reconfig = Config::JSON->new($filename);
 cmp_bag($config->get('cars/ford'),$reconfig->get('cars/ford'), 'set() multilevel after re-reading config file');
-
+$config->set('Data::GUID', '9EDE9D96-D416-11DF-A7FC-B391564030AF');
+is($config->get('Data::GUID'), '9EDE9D96-D416-11DF-A7FC-B391564030AF', 'report that Data::GUID does not work with CJ');
 
 # delete 
 $config->delete("dsn");

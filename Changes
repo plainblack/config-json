@@ -1,5 +1,11 @@
 Revision history for Config-JSON
 
+1.5100 2010-12-09
+ - Swtiched to Any::Moose so that it runs faster if used in a command line app.
+ - Now requires Any::Moose.
+ - No longer requires Moose.
+ - Added test for possible interaction problem with Data::GUID reported by David Delikat.
+
 1.5000 2009-12-19
  - Converted Config::JSON to use Moose.
  - Removed requirements for version and Class::InsideOut.

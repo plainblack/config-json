@@ -1,6 +1,6 @@
 package Config::JSON;
 
-use Moose;
+use Any::Moose;
 use File::Spec;
 use JSON 2.0;
 use List::Util;
@@ -657,5 +657,5 @@ Config::JSON is Copyright 2009 Plain Black Corporation (L<http://www.plainblack.
 
 =cut
 
-no Moose;
+no Any::Moose;
 __PACKAGE__->meta->make_immutable;
