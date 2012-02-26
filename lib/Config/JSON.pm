@@ -25,7 +25,9 @@ has pathToFile => (
    required => 1,
    trigger  => sub {
         my ($self, $pathToFile, $old) = @_;
-        if (open(my $FILE, "<", $pathToFile)) {
+        my $abs_path = File::Spec->rel2abs($pathToFile);
+        my ($volume, $directories, $file) = File::Spec->splitpath($abs_path);
+        if (open(my $FILE, "<", $abs_path)) {
             # slurp
             local $/ = undef;
             my $json = <$FILE>;
@@ -34,8 +36,8 @@ has pathToFile => (
             confess "Couldn't parse JSON in config file '$pathToFile'\n" unless ref $conf;
             $self->config($conf);
 		
-		    # process includes
-		    my @includes = map { glob $_ } @{ $self->get('includes') || [] };
+	    # process includes
+	    my @includes = map { glob File::Spec->catpath($volume, $directories , $_) } @{ $self->get('includes') || [] };
             my @loadedIncludes;
 	    	foreach my $include (@includes) {
 			    push @loadedIncludes,  __PACKAGE__->new(pathToFile=>$include, isInclude=>1);
