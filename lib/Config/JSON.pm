@@ -2,6 +2,7 @@ package Config::JSON;
 
 use strict;
 use Moo;
+use Carp;
 use File::Spec;
 use JSON 2.0;
 use List::Util;
