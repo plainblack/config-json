@@ -1,4 +1,7 @@
 Revision history for Config-JSON
+1.5202 2014-12-25
+ - Fix: Moo does not import Carp it would seem - Joel Berger
+
 1.5201 2014-12-25
  - Forgot to update the prereqs to move to Moo.
 
