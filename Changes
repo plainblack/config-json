@@ -1,5 +1,8 @@
 Revision history for Config-JSON
 
+1.5200 2014-12-25
+ - Switched from Any::Moose to Moo at the behest of Joel Berger.
+
 1.5100 2010-12-09
  - Swtiched to Any::Moose so that it runs faster if used in a command line app.
  - Now requires Any::Moose.
