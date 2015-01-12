@@ -297,28 +297,19 @@ sub write {
     my $to_write = FILE_HEADER . "\n" . $json;
     my $needed_bytes = length $to_write;
 
-    # open as read/write
-    open my $fh, '+<:raw', $realfile or confess "Unable to open $realfile for write: $!";
-    my $current_bytes = (stat $fh)[7];
-    # shrink file if needed
-    if ($needed_bytes < $current_bytes) {
-        truncate $fh, $needed_bytes;
-    }
-    # make sure we can expand the file to the needed size before we overwrite it
-    elsif ($needed_bytes > $current_bytes) {
-        my $padding = q{ } x ($needed_bytes - $current_bytes);
-        sysseek $fh, 0, 2;
-        if (! syswrite $fh, $padding) {
-            sysseek $fh, 0, 0;
-            truncate $fh, $current_bytes;
-            close $fh;
-            confess "Unable to expand $realfile: $!";
-        }
-        sysseek $fh, 0, 0;
-        seek $fh, 0, 0;
-    }
-    print {$fh} $to_write;
-    close $fh;
+    # read the permissions of any current copy of the config file
+    open my $fh, '<', $realfile;
+    my $perm = $fh ? (stat $fh)[2] & 07777 : undef;
+    close $fh if $fh;
+
+    # write new copy of the config file to a tmp file
+    my $tmpfile = "$realfile.tmp.$$";
+    open $fh, '>:raw', $tmpfile or confess "Unable to open '$tmpfile' for write: $!";
+    chmod $perm, $fh if $perm;
+    print {$fh} $to_write or confess "Failed while writing to '$tmpfile'";
+    close $fh or confess "Failed after writing to '$tmpfile'";
+
+    rename $tmpfile, $realfile or confess "Failed to move '$tmpfile' over top of '$realfile'";
 
     return 1;
 }
