@@ -2,15 +2,15 @@ use strict;
 use warnings;
 use Test::More tests => 12;
 
-use lib '../lib';
+use lib './lib';
 use Test::Deep;
 use Config::JSON;
 use File::Temp qw/ tempfile /;
 use JSON;
 
 my ($mainHandle, $mainConfigFile) = tempfile();
-my ($firstIncludeHandle, $firstIncludeFile) = tempfile('XXXXX', SUFFIX => '.include.conf', UNLINK => 1);
-my ($secondIncludeHandle, $secondIncludeFile) = tempfile('XXXXX', SUFFIX => '.include.conf', UNLINK => 1);
+my ($firstIncludeHandle, $firstIncludeFile) = tempfile(SUFFIX => '.include.conf', UNLINK => 1);
+my ($secondIncludeHandle, $secondIncludeFile) = tempfile(SUFFIX => '.include.conf', UNLINK => 1);
 close($mainHandle);
 close($firstIncludeHandle);
 close($secondIncludeHandle);

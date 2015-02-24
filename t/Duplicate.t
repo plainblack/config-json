@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More tests => 22;
 
-use lib '../lib';
+use lib './lib';
 use Test::Deep;
 use Config::JSON;
 use File::Temp qw/ tempfile /;
@@ -17,6 +17,8 @@ close($secondIncludeHandle);
 
 # set up main config file with include section
 if (open(my $file, ">", $mainConfigFile)) {
+    my ($volume1, $directories1, $file1) = File::Spec->splitpath( File::Spec->rel2abs($firstIncludeFile) );
+    my ($volume2, $directories2, $file2) = File::Spec->splitpath( File::Spec->rel2abs($secondIncludeFile) );
     my $testData = <<END;
 
 {
@@ -42,7 +44,7 @@ if (open(my $file, ">", $mainConfigFile)) {
         }
     },
 
-    "includes" : [ "$firstIncludeFile", "$secondIncludeFile"]
+    "includes" : [ "$file1", "$file2"]
 } 
 
 END
