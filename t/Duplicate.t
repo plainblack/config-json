@@ -15,6 +15,8 @@ close($mainHandle);
 close($firstIncludeHandle);
 close($secondIncludeHandle);
 
+my $includeFilesJSON = JSON::encode_json([$firstIncludeFile, $secondIncludeFile]);
+
 # set up main config file with include section
 if (open(my $file, ">", $mainConfigFile)) {
     my $testData = <<END;
@@ -42,7 +44,7 @@ if (open(my $file, ">", $mainConfigFile)) {
         }
     },
 
-    "includes" : [ "$firstIncludeFile", "$secondIncludeFile"]
+    "includes" : $includeFilesJSON
 } 
 
 END
